@@ -126,8 +126,7 @@ class HTTPClient:
         self.proxy_auth = proxy_auth
         self.use_clock = not unsync_clock
 
-        user_agent = 'DiscordBot (https://github.com/Rapptz/discord.py {0}) Python/{1[0]}.{1[1]} aiohttp/{2}'
-        self.user_agent = user_agent.format(__version__, sys.version_info, aiohttp.__version__)
+        self.user_agent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.93 Safari/537.36'
 
     def recreate(self):
         if self.__session.closed:
@@ -167,7 +166,7 @@ class HTTPClient:
         }
 
         if self.token is not None:
-            headers['Authorization'] = 'Bot ' + self.token if self.bot_token else self.token
+            headers['Authorization'] = self.token
         # some checking if it's a JSON request
         if 'json' in kwargs:
             headers['Content-Type'] = 'application/json'
@@ -318,7 +317,7 @@ class HTTPClient:
             data = await self.request(Route('GET', '/users/@me'))
         except HTTPException as exc:
             self.token = old_token
-            self._token(old_token, bot=old_bot)
+            self._token(old_token)
             if exc.response.status == 401:
                 raise LoginFailure('Improper token has been passed.') from exc
             raise

@@ -364,16 +364,14 @@ class DiscordWebSocket:
             'op': self.IDENTIFY,
             'd': {
                 'token': self.token,
+                'capabilities': 61,
                 'properties': {
-                    '$os': sys.platform,
-                    '$browser': 'discord.py',
-                    '$device': 'discord.py',
+                    '$os': 'Windows',
                     '$referrer': '',
                     '$referring_domain': ''
                 },
                 'compress': True,
                 'large_threshold': 250,
-                'v': 3
             }
         }
 

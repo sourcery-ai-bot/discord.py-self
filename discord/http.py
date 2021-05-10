@@ -167,7 +167,7 @@ class HTTPClient:
         }
 
         if self.token is not None:
-            headers['Authorization'] = 'Bot ' + self.token
+            headers['Authorization'] = 'Bot ' + self.token if self.bot_token else self.token
         # some checking if it's a JSON request
         if 'json' in kwargs:
             headers['Content-Type'] = 'application/json'
@@ -304,16 +304,21 @@ class HTTPClient:
 
     # login management
 
-    async def static_login(self, token):
+    def _token(self, token, *, bot=True):
+        self.token = token
+        self.bot_token = bot
+        self._ack_token = None
+
+    async def static_login(self, token, *, bot):
         # Necessary to get aiohttp to stop complaining about session creation
         self.__session = aiohttp.ClientSession(connector=self.connector, ws_response_class=DiscordClientWebSocketResponse)
-        old_token = self.token
-        self.token = token
-
+        old_token, old_bot = self.token, self.bot_token
+        self._token(token, bot=bot)
         try:
             data = await self.request(Route('GET', '/users/@me'))
         except HTTPException as exc:
             self.token = old_token
+            self._token(old_token, bot=old_bot)
             if exc.response.status == 401:
                 raise LoginFailure('Improper token has been passed.') from exc
             raise

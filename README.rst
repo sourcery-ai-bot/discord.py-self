@@ -19,7 +19,8 @@ Fork Changes
 
 **Credits:**
 
-- `u/pogofetch <https://www.reddit.com/user/pogofetch/>`_ for most of the changes.
+- `u/selfbotupdater <https://www.reddit.com/user/selfbotupdater/>`_ for most of the changes.
+- `u/pogofetch <https://www.reddit.com/user/pogofetch/>`_ for most of the changes (v1.x).
 - `karibiusk <https://stackoverflow.com/users/15139805/karibiusk/>`_ for some food for thought.
 - `Maxx0911 <https://www.reddit.com/user/Maxx0911/>`_ for more food for thought.
 

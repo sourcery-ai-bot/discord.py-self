@@ -1,7 +1,7 @@
 blank_issues_enabled: false
 contact_links:
   - name: Get help
-    url: https://github.com/EssentialsX/Essentials/discussions/new?category=ideas-and-feature-suggestions
+    url: https://github.com/dolfies/discord.py-self/discussions/new?category=help
     about: Ask a question on our help page.
   - name: Suggest a feature
     url: https://github.com/dolfies/discord.py-self/discussions/new?category=ideas

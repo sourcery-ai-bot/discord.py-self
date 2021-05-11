@@ -115,8 +115,8 @@ class BotBase(GroupMixin):
         self.owner_ids = options.get('owner_ids', set())
         self.strip_after_prefix = options.get('strip_after_prefix', False)
 
-        self.self_bot = options.pop("self_bot", False)
-        self.trusted_users = options.pop("trusted_users", [])
+        self.self_bot = options.pop('self_bot', False)
+        self.trusted_users = options.pop('trusted_users', [])
 
         if self.owner_id and self.owner_ids:
             raise TypeError('Both owner_id and owner_ids are set.')
@@ -124,6 +124,12 @@ class BotBase(GroupMixin):
         if self.owner_ids and not isinstance(self.owner_ids, collections.abc.Collection):
             raise TypeError(f'owner_ids must be a collection not {self.owner_ids.__class__!r}')
 
+        if self.self_bot and self.trusted_users:
+            raise TypeError('Both self_bot and trusted_users are set.')
+
+        if self.trusted_users and not isinstance(self.trusted_users, collections.abc.Collection):
+            raise TypeError(f'trusted_users must be a collection not {self.trusted_users.__class__!r}')
+            
         if self.trusted_users:
             # skip when the message author is not trusted
             self._skip_check = lambda author, trusted, _: author not in trusted

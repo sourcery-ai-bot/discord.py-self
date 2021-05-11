@@ -1,8 +1,11 @@
 blank_issues_enabled: false
 contact_links:
-  - name: Ask a question
-    about: Ask questions and discuss with other users of the library.
-    url: https://github.com/dolfies/discord.py-self/discussions
-  - name: Discord Server
-    about: Use our official Discord server to ask for help and questions as well.
-    url: https://example.com
+  - name: Get help
+    url: https://github.com/EssentialsX/Essentials/discussions/new?category=ideas-and-feature-suggestions
+    about: Ask a question on our help page.
+  - name: Suggest a feature
+    url: https://github.com/dolfies/discord.py-self/discussions/new?category=ideas
+    about: Suggest new features for the library!
+  - name: Join the Discord
+    url: https://discord.gg/
+    about: Join the Discord community for support and updates!

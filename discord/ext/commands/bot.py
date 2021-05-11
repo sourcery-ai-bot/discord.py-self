@@ -129,17 +129,13 @@ class BotBase(GroupMixin):
 
         if self.trusted_users and not isinstance(self.trusted_users, collections.abc.Collection):
             raise TypeError(f'trusted_users must be a collection not {self.trusted_users.__class__!r}')
-            
-        if self.trusted_users:
-            # skip when the message author is not trusted
+
+        if self.self_bot:
+            self._skip_check = lambda author, _, bot_id: author != bot_id
+        elif self.trusted_users:
             self._skip_check = lambda author, trusted, _: author not in trusted
         else:
-            if self.self_bot:
-                # only trust yourself
-                self._skip_check = lambda author, _, bot_id: author != bot_id
-            else:
-                # anyone but the bot can use commands
-                self._skip_check = lambda author, _, bot_id: author == bot_id
+            self._skip_check = lambda author, _, bot_id: author == bot_id
 
         if help_command is _default:
             self.help_command = DefaultHelpCommand()

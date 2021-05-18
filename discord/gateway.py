@@ -594,7 +594,9 @@ class DiscordWebSocket:
         if activity is not None:
             if not isinstance(activity, BaseActivity):
                 raise InvalidArgument('activity must derive from BaseActivity.')
-            activity = activity.to_dict()
+            activity = [activity.to_dict()]
+        else:
+            activity = []
 
         if status == 'idle':
             since = int(time.time() * 1000)
@@ -602,7 +604,7 @@ class DiscordWebSocket:
         payload = {
             'op': self.PRESENCE,
             'd': {
-                'activities': [activity],
+                'activities': activity,
                 'afk': afk,
                 'since': since,
                 'status': status

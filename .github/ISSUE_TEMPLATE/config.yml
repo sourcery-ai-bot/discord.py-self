@@ -2,7 +2,7 @@ blank_issues_enabled: true
 contact_links:
   - name: Get help
     url: https://github.com/dolfies/discord.py-self/discussions/new?category=help
-    about: Ask a question on our help page.
+    about: Ask a question on our help page (*not* for bug reports).
   - name: Suggest a feature
     url: https://github.com/dolfies/discord.py-self/discussions/new?category=ideas
     about: Suggest new features for the library!

@@ -1,6 +1,6 @@
 ---
 name: Bug report
-about: Report exceptions or incorrect behaviour.
+about: Report issues, exceptions, or broken/incorrect behaviour.
 title: "[BUG] Short but descriptive title"
 labels: unconfirmed-bug
 assignees: ''

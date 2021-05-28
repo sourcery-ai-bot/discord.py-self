@@ -358,6 +358,7 @@ class HTTPClient:
         nonce=None,
         allowed_mentions=None,
         message_reference=None,
+        components=None,
     ):
         r = Route('POST', '/channels/{channel_id}/messages', channel_id=channel_id)
         payload = {}
@@ -380,6 +381,9 @@ class HTTPClient:
         if message_reference:
             payload['message_reference'] = message_reference
 
+        if components:
+            payload['components'] = components
+
         return self.request(r, json=payload)
 
     def send_typing(self, channel_id):
@@ -397,6 +401,7 @@ class HTTPClient:
         nonce=None,
         allowed_mentions=None,
         message_reference=None,
+        components=None,
     ):
         form = []
 
@@ -413,6 +418,8 @@ class HTTPClient:
             payload['allowed_mentions'] = allowed_mentions
         if message_reference:
             payload['message_reference'] = message_reference
+        if components:
+            payload['components'] = components
 
         form.append({'name': 'payload_json', 'value': utils.to_json(payload)})
         if len(files) == 1:
@@ -449,6 +456,7 @@ class HTTPClient:
         nonce=None,
         allowed_mentions=None,
         message_reference=None,
+        components=None,
     ):
         r = Route('POST', '/channels/{channel_id}/messages', channel_id=channel_id)
         return self.send_multipart_helper(
@@ -460,6 +468,7 @@ class HTTPClient:
             nonce=nonce,
             allowed_mentions=allowed_mentions,
             message_reference=message_reference,
+            components=components,
         )
 
     def delete_message(self, channel_id, message_id, *, reason=None):
@@ -1214,14 +1223,21 @@ class HTTPClient:
 
         return self.request(route, form=form, files=[file])
 
-    def create_interaction_response(self, interaction_id, token):
+    def create_interaction_response(self, interaction_id, token, *, type, data=None):
         r = Route(
             'POST',
             '/interactions/{interaction_id}/{interaction_token}/callback',
             interaction_id=interaction_id,
             interaction_token=token,
         )
-        return self.request(r)
+        payload = {
+            'type': type,
+        }
+
+        if data is not None:
+            payload['data'] = data
+
+        return self.request(r, json=payload)
 
     def get_original_interaction_response(
         self,

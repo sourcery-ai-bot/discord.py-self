@@ -30,6 +30,7 @@ import os
 from .item import Item, ItemCallbackType
 from ..enums import ComponentType
 from ..partial_emoji import PartialEmoji
+from ..emoji import Emoji
 from ..interactions import Interaction
 from ..utils import MISSING
 from ..components import (
@@ -75,6 +76,12 @@ class Select(Item[V]):
         Defaults to 1 and must be between 1 and 25.
     options: List[:class:`discord.SelectOption`]
         A list of options that can be selected in this menu.
+    row: Optional[:class:`int`]
+        The relative row this select menu belongs to. A Discord component can only have 5
+        rows. By default, items are arranged automatically into those 5 rows. If you'd
+        like to control the relative positioning of the row then passing an index is advised.
+        For example, row=1 will show up before row=2. Defaults to ``None``, which is automatic
+        ordering. The row number must be between 0 and 4 (i.e. zero indexed).
     """
 
     __item_repr_attributes__: Tuple[str, ...] = (
@@ -92,9 +99,10 @@ class Select(Item[V]):
         min_values: int = 1,
         max_values: int = 1,
         options: List[SelectOption] = MISSING,
-        group: Optional[int] = None,
+        row: Optional[int] = None,
     ) -> None:
         self._selected_values: List[str] = []
+        self._provided_custom_id = custom_id is not MISSING
         custom_id = os.urandom(16).hex() if custom_id is MISSING else custom_id
         options = [] if options is MISSING else options
         self._underlying = SelectMenu._raw_construct(
@@ -105,7 +113,7 @@ class Select(Item[V]):
             max_values=max_values,
             options=options,
         )
-        self.group_id = group
+        self.row = row
 
     @property
     def custom_id(self) -> str:
@@ -154,13 +162,22 @@ class Select(Item[V]):
         """List[:class:`discord.SelectOption`]: A list of options that can be selected in this menu."""
         return self._underlying.options
 
+    @options.setter
+    def options(self, value: List[SelectOption]):
+        if not isinstance(value, list):
+            raise TypeError('options must be a list of SelectOption')
+        if not all(isinstance(obj, SelectOption) for obj in value):
+            raise TypeError('all list items must subclass SelectOption')
+
+        self._underlying.options = value
+
     def add_option(
         self,
         *,
         label: str,
         value: str = MISSING,
         description: Optional[str] = None,
-        emoji: Optional[Union[str, PartialEmoji]] = None,
+        emoji: Optional[Union[str, Emoji, PartialEmoji]] = None,
         default: bool = False,
     ):
         """Adds an option to the select menu.
@@ -179,9 +196,9 @@ class Select(Item[V]):
         description: Optional[:class:`str`]
             An additional description of the option, if any.
             Can only be up to 50 characters.
-        emoji: Optional[Union[:class:`str`, :class:`PartialEmoji`]]
+        emoji: Optional[Union[:class:`str`, :class:`Emoji`, :class:`PartialEmoji`]]
             The emoji of the option, if available. This can either be a string representing
-            the custom or unicode emoji or an instance of :class:`PartialEmoji`.
+            the custom or unicode emoji or an instance of :class:`PartialEmoji` or :class:`Emoji`.
         default: :class:`bool`
             Whether this option is selected by default.
 
@@ -190,9 +207,6 @@ class Select(Item[V]):
         ValueError
             The number of options exceeds 25.
         """
-
-        if isinstance(emoji, str):
-            emoji = PartialEmoji.from_str(emoji)
 
         option = SelectOption(
             label=label,
@@ -229,6 +243,10 @@ class Select(Item[V]):
         """List[:class:`str`]: A list of values that have been selected by the user."""
         return self._selected_values
 
+    @property
+    def width(self) -> int:
+        return 5
+
     def to_component_dict(self) -> SelectMenuPayload:
         return self._underlying.to_dict()
 
@@ -247,7 +265,7 @@ class Select(Item[V]):
             min_values=component.min_values,
             max_values=component.max_values,
             options=component.options,
-            group=None,
+            row=None,
         )
 
     @property
@@ -265,7 +283,7 @@ def select(
     min_values: int = 1,
     max_values: int = 1,
     options: List[SelectOption] = MISSING,
-    group: Optional[int] = None,
+    row: Optional[int] = None,
 ) -> Callable[[ItemCallbackType], ItemCallbackType]:
     """A decorator that attaches a select menu to a component.
 
@@ -281,12 +299,12 @@ def select(
     custom_id: :class:`str`
         The ID of the select menu that gets received during an interaction.
         It is recommended not to set this parameter to prevent conflicts.
-    group: Optional[:class:`int`]
-        The relative group this select menu belongs to. A Discord component can only have 5
-        groups. By default, items are arranged automatically into those 5 groups. If you'd
-        like to control the relative positioning of the group then passing an index is advised.
-        For example, group=1 will show up before group=2. Defaults to ``None``, which is automatic
-        ordering.
+    row: Optional[:class:`int`]
+        The relative row this select menu belongs to. A Discord component can only have 5
+        rows. By default, items are arranged automatically into those 5 rows. If you'd
+        like to control the relative positioning of the row then passing an index is advised.
+        For example, row=1 will show up before row=2. Defaults to ``None``, which is automatic
+        ordering. The row number must be between 0 and 4 (i.e. zero indexed).
     min_values: :class:`int`
         The minimum number of items that must be chosen for this select menu.
         Defaults to 1 and must be between 1 and 25.
@@ -305,7 +323,7 @@ def select(
         func.__discord_ui_model_kwargs__ = {
             'placeholder': placeholder,
             'custom_id': custom_id,
-            'group': group,
+            'row': row,
             'min_values': min_values,
             'max_values': max_values,
             'options': options,

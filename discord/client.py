@@ -29,7 +29,7 @@ import logging
 import signal
 import sys
 import traceback
-from typing import Any, List, Optional, TYPE_CHECKING, Union
+from typing import Any, Generator, List, Optional, Sequence, TYPE_CHECKING, TypeVar, Union
 
 import aiohttp
 
@@ -56,6 +56,7 @@ from .webhook import Webhook
 from .iterators import GuildIterator
 from .appinfo import AppInfo
 from .ui.view import View
+from .stage_instance import StageInstance
 
 __all__ = (
     'Client',
@@ -699,6 +700,28 @@ class Client:
         """
         return self._connection.get_channel(id)
 
+    def get_stage_instance(self, id) -> Optional[StageInstance]:
+        """Returns a stage instance with the given stage channel ID.
+
+        .. versionadded:: 2.0
+
+        Parameters
+        -----------
+        id: :class:`int`
+            The ID to search for.
+
+        Returns
+        --------
+        Optional[:class:`StageInstance`]
+            The returns stage instance of ``None`` if not found.
+        """
+        from .channel import StageChannel
+
+        channel = self._connection.get_channel(id)
+
+        if isinstance(channel, StageChannel):
+            return channel.instance
+
     def get_guild(self, id):
         """Returns a guild with the given ID.
 
@@ -1142,6 +1165,34 @@ class Client:
             data = await self.http.create_guild(name, region_value, icon)
         return Guild(data=data, state=self._connection)
 
+    async def fetch_stage_instance(self, channel_id: int) -> StageInstance:
+        """|coro|
+
+        Gets a :class:`StageInstance` for a stage channel id.
+
+        .. versionadded:: 2.0
+
+        Parameters
+        -----------
+        channel_id: :class:`int`
+            The stage channel ID.
+
+        Raises
+        -------
+        :exc:`.NotFound`
+            The stage instance or channel could not be found.
+        :exc:`.HTTPException`
+            Getting the stage instance failed.
+
+        Returns
+        --------
+        :class:`StageInstance`
+            The stage instance from the stage channel ID.
+        """
+        data = await self.http.get_stage_instance(channel_id)
+        guild = self.get_guild(int(data['guild_id']))
+        return StageInstance(guild=guild, state=self._connection, data=data)  # type: ignore
+
     # Invite management
 
     async def fetch_invite(self, url: Union[Invite, str], *, with_counts: bool = True, with_expiration: bool = True) -> Invite:
@@ -1267,7 +1318,7 @@ class Client:
     async def fetch_user(self, user_id):
         """|coro|
 
-        Retrieves a :class:`~discord.User` based on their ID. 
+        Retrieves a :class:`~discord.User` based on their ID.
         You do not have to share any guilds with the user to get this information,
         however many operations do require that you do.
 
@@ -1406,9 +1457,20 @@ class Client:
         -------
         TypeError
             A view was not passed.
+        ValueError
+            The view is not persistent. A persistent view has no timeout
+            and all their components have an explicitly provided custom_id.
         """
 
         if not isinstance(view, View):
             raise TypeError(f'expected an instance of View not {view.__class__!r}')
 
+        if not view.is_persistent():
+            raise ValueError('View is not persistent. Items need to have a custom_id set and View must have no timeout')
+
         self._connection.store_view(view, message_id)
+
+    @property
+    def persistent_views(self) -> Sequence[View]:
+        """Sequence[:class:`View`]: A sequence of persistent views added to the client."""
+        return self._connection.persistent_views

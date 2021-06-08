@@ -53,6 +53,7 @@ __all__ = (
     'StagePrivacyLevel',
     'InteractionType',
     'InteractionResponseType',
+    'NSFWLevel',
 )
 
 def _create_value_cls(name):
@@ -154,14 +155,17 @@ else:
                 return value
 
 class ChannelType(Enum):
-    text     = 0
-    private  = 1
-    voice    = 2
-    group    = 3
-    category = 4
-    news     = 5
-    store    = 6
-    stage_voice = 13
+    text           = 0
+    private        = 1
+    voice          = 2
+    group          = 3
+    category       = 4
+    news           = 5
+    store          = 6
+    news_thread    = 10
+    public_thread  = 11
+    private_thread = 12
+    stage_voice    = 13
 
     def __str__(self):
         return self.name
@@ -185,8 +189,10 @@ class MessageType(Enum):
     guild_discovery_requalified                  = 15
     guild_discovery_grace_period_initial_warning = 16
     guild_discovery_grace_period_final_warning   = 17
+    thread_created                               = 18
     reply                                        = 19
     application_command                          = 20
+    thread_starter_message                       = 21
     guild_invite_reminder                        = 22
 
 class VoiceRegion(Enum):
@@ -487,6 +493,12 @@ class StagePrivacyLevel(Enum):
     public = 1
     closed = 2
     guild_only = 2
+
+class NSFWLevel(Enum):
+    default = 0
+    explicit = 1
+    safe = 2
+    age_restricted = 3
 
 T = TypeVar('T')
 

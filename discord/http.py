@@ -44,7 +44,9 @@ if TYPE_CHECKING:
     from .types import (
         interactions,
         invite,
-        stage_instance,
+        channel,
+        widget,
+        threads,
     )
     from .types.snowflake import Snowflake
 
@@ -698,6 +700,9 @@ class HTTPClient:
             'type',
             'rtc_region',
             'video_quality_mode',
+            'archived',
+            'auto_archive_duration',
+            'locked',
         )
         payload = {k: v for k, v in options.items() if k in valid_keys}
         return self.request(r, reason=reason, json=payload)
@@ -723,6 +728,7 @@ class HTTPClient:
             'rate_limit_per_user',
             'rtc_region',
             'video_quality_mode',
+            'auto_archive_duration',
         )
         payload.update({k: v for k, v in options.items() if k in valid_keys and v is not None})
 
@@ -730,6 +736,100 @@ class HTTPClient:
 
     def delete_channel(self, channel_id, *, reason=None):
         return self.request(Route('DELETE', '/channels/{channel_id}', channel_id=channel_id), reason=reason)
+
+    # Thread management
+
+    def start_public_thread(
+        self,
+        channel_id: int,
+        message_id: int,
+        *,
+        name: str,
+        auto_archive_duration: int,
+        type: int,
+    ) -> Response[threads.Thread]:
+        payload = {
+            'name': name,
+            'auto_archive_duration': auto_archive_duration,
+            'type': type,
+        }
+
+        route = Route(
+            'POST', '/channels/{channel_id}/messages/{message_id}/threads', channel_id=channel_id, message_id=message_id
+        )
+        return self.request(route, json=payload)
+
+    def start_private_thread(
+        self,
+        channel_id: int,
+        *,
+        name: str,
+        auto_archive_duration: int,
+        type: int,
+    ) -> Response[threads.Thread]:
+        payload = {
+            'name': name,
+            'auto_archive_duration': auto_archive_duration,
+            'type': type,
+        }
+
+        route = Route('POST', '/channels/{channel_id}/threads', channel_id=channel_id)
+        return self.request(route, json=payload)
+
+    def join_thread(self, channel_id: int):
+        return self.request(Route('POST', '/channels/{channel_id}/thread-members/@me', channel_id=channel_id))
+
+    def add_user_to_thread(self, channel_id: int, user_id: int):
+        return self.request(
+            Route('PUT', '/channels/{channel_id}/thread-members/{user_id}', channel_id=channel_id, user_id=user_id)
+        )
+
+    def leave_thread(self, channel_id: int):
+        return self.request(Route('DELETE', '/channels/{channel_id}/thread-members/@me', channel_id=channel_id))
+
+    def remove_user_from_thread(self, channel_id: int, user_id: int):
+        route = Route('DELETE', '/channels/{channel_id}/thread-members/{user_id}', channel_id=channel_id, user_id=user_id)
+        return self.request(route)
+
+    def get_public_archived_threads(
+        self, channel_id: int, before=None, limit: int = 50
+    ) -> Response[threads.ThreadPaginationPayload]:
+        route = Route('GET', '/channels/{channel_id}/threads/archived/public', channel_id=channel_id)
+
+        params = {}
+        if before:
+            params['before'] = before
+        params['limit'] = limit
+        return self.request(route, params=params)
+
+    def get_private_archived_threads(
+        self, channel_id: int, before=None, limit: int = 50
+    ) -> Response[threads.ThreadPaginationPayload]:
+        route = Route('GET', '/channels/{channel_id}/threads/archived/private', channel_id=channel_id)
+
+        params = {}
+        if before:
+            params['before'] = before
+        params['limit'] = limit
+        return self.request(route, params=params)
+
+    def get_joined_private_archived_threads(
+        self, channel_id: int, before=None, limit: int = 50
+    ) -> Response[threads.ThreadPaginationPayload]:
+        route = Route('GET', '/channels/{channel_id}/users/@me/threads/archived/private', channel_id=channel_id)
+        params = {}
+        if before:
+            params['before'] = before
+        params['limit'] = limit
+        return self.request(route, params=params)
+
+    def get_active_threads(self, channel_id: int) -> Response[threads.ThreadPaginationPayload]:
+        route = Route('GET', '/channels/{channel_id}/threads/active', channel_id=channel_id)
+        return self.request(route)
+
+    def get_thread_members(self, channel_id: int) -> Response[List[threads.ThreadMember]]:
+        route = Route('GET', '/channels/{channel_id}/thread-members', channel_id=channel_id)
+        return self.request(route)
 
     # Webhook management
 
@@ -973,10 +1073,10 @@ class HTTPClient:
         r = Route('GET', '/guilds/{guild_id}/audit-logs', guild_id=guild_id)
         return self.request(r, params=params)
 
-    def get_widget(self, guild_id):
+    def get_widget(self, guild_id: Snowflake) -> Response[widget.Widget]:
         return self.request(Route('GET', '/guilds/{guild_id}/widget.json', guild_id=guild_id))
-    
-    def edit_widget(self, guild_id, payload):
+
+    def edit_widget(self, guild_id: Snowflake, payload) -> Response[widget.WidgetSettings]:
         return self.request(Route('PATCH', '/guilds/{guild_id}/widget', guild_id=guild_id), json=payload)
 
     # Invite management
@@ -1013,20 +1113,20 @@ class HTTPClient:
 
         return self.request(r, reason=reason, json=payload)
 
-    def get_invite(self, invite_id, *, with_counts=True, with_expiration=True):
+    def get_invite(self, invite_id: str, *, with_counts: bool = True, with_expiration: bool = True) -> Response[invite.Invite]:
         params = {
             'with_counts': int(with_counts),
             'with_expiration': int(with_expiration),
         }
         return self.request(Route('GET', '/invites/{invite_id}', invite_id=invite_id), params=params)
 
-    def invites_from(self, guild_id):
+    def invites_from(self, guild_id: Snowflake) -> Response[List[invite.Invite]]:
         return self.request(Route('GET', '/guilds/{guild_id}/invites', guild_id=guild_id))
 
-    def invites_from_channel(self, channel_id):
+    def invites_from_channel(self, channel_id: Snowflake) -> Response[List[invite.Invite]]:
         return self.request(Route('GET', '/channels/{channel_id}/invites', channel_id=channel_id))
 
-    def delete_invite(self, invite_id, *, reason=None):
+    def delete_invite(self, invite_id: str, *, reason: bool = None) -> Response[None]:
         return self.request(Route('DELETE', '/invites/{invite_id}', invite_id=invite_id), reason=reason)
 
     # Role management
@@ -1091,10 +1191,10 @@ class HTTPClient:
 
     # Stage instance management
 
-    def get_stage_instance(self, channel_id: Snowflake) -> Response[stage_instance.StageInstance]:
+    def get_stage_instance(self, channel_id: Snowflake) -> Response[channel.StageInstance]:
         return self.request(Route('GET', '/stage-instances/{channel_id}', channel_id=channel_id))
 
-    def create_stage_instance(self, **payload) -> Response[stage_instance.StageInstance]:
+    def create_stage_instance(self, **payload) -> Response[channel.StageInstance]:
         valid_keys = (
             'channel_id',
             'topic',
@@ -1376,7 +1476,9 @@ class HTTPClient:
         )
         return self.request(r)
 
-    def get_guild_application_command_permissions(self, application_id, guild_id) -> Response[List[interactions.GuildApplicationCommandPermissions]]:
+    def get_guild_application_command_permissions(
+        self, application_id, guild_id
+    ) -> Response[List[interactions.GuildApplicationCommandPermissions]]:
         r = Route(
             'GET',
             '/applications/{application_id}/guilds/{guild_id}/commands/permissions',
@@ -1385,7 +1487,9 @@ class HTTPClient:
         )
         return self.request(r)
 
-    def get_application_command_permissions(self, application_id, guild_id, command_id) -> Response[interactions.GuildApplicationCommandPermissions]:
+    def get_application_command_permissions(
+        self, application_id, guild_id, command_id
+    ) -> Response[interactions.GuildApplicationCommandPermissions]:
         r = Route(
             'GET',
             '/applications/{application_id}/guilds/{guild_id}/commands/{command_id}/permissions',
@@ -1425,9 +1529,9 @@ class HTTPClient:
         except HTTPException as exc:
             raise GatewayNotFound() from exc
         if zlib:
-            value = '{0}?encoding={1}&v=8&compress=zlib-stream'
+            value = '{0}?encoding={1}&v=9&compress=zlib-stream'
         else:
-            value = '{0}?encoding={1}&v=8'
+            value = '{0}?encoding={1}&v=9'
         return value.format(data['url'], encoding)
 
     async def get_bot_gateway(self, *, encoding='json', zlib=True):
@@ -1437,9 +1541,9 @@ class HTTPClient:
             raise GatewayNotFound() from exc
 
         if zlib:
-            value = '{0}?encoding={1}&v=8&compress=zlib-stream'
+            value = '{0}?encoding={1}&v=9&compress=zlib-stream'
         else:
-            value = '{0}?encoding={1}&v=8'
+            value = '{0}?encoding={1}&v=9'
         return data['shards'], value.format(data['url'], encoding)
 
     def get_user(self, user_id):

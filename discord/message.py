@@ -1221,11 +1221,7 @@ class Message(Hashable):
             view = None
         else:
             self._state.prevent_view_updates_for(self.id)
-            if view:
-                fields['components'] = view.to_components()
-            else:
-                fields['components'] = []
-
+            fields['components'] = view.to_components() if view else []
         if fields:
             data = await self._state.http.edit_message(self.channel.id, self.id, **fields)
             self._update(data)
@@ -1732,11 +1728,7 @@ class PartialMessage(Hashable):
             view = None
         else:
             self._state.prevent_view_updates_for(self.id)
-            if view:
-                fields['components'] = view.to_components()
-            else:
-                fields['components'] = []
-
+            fields['components'] = view.to_components() if view else []
         if fields:
             data = await self._state.http.edit_message(self.channel.id, self.id, **fields)
 

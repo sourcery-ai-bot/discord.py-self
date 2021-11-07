@@ -466,13 +466,12 @@ def to_json(obj: Any) -> str:
 
 def _parse_ratelimit_header(request: _RequestLike, *, use_clock: bool = False) -> float:
     reset_after = request.headers.get('X-Ratelimit-Reset-After')
-    if use_clock or not reset_after:
-        utc = datetime.timezone.utc
-        now = datetime.datetime.now(utc)
-        reset = datetime.datetime.fromtimestamp(float(request.headers['X-Ratelimit-Reset']), utc)
-        return (reset - now).total_seconds()
-    else:
+    if not use_clock and reset_after:
         return float(reset_after)
+    utc = datetime.timezone.utc
+    now = datetime.datetime.now(utc)
+    reset = datetime.datetime.fromtimestamp(float(request.headers['X-Ratelimit-Reset']), utc)
+    return (reset - now).total_seconds()
 
 
 async def maybe_coroutine(f, *args, **kwargs):
@@ -626,11 +625,10 @@ def resolve_invite(invite: Union[Invite, str]) -> str:
 
     if isinstance(invite, Invite):
         return invite.code
-    else:
-        rx = r'(?:https?\:\/\/)?discord(?:\.gg|(?:app)?\.com\/invite)\/(.+)'
-        m = re.match(rx, invite)
-        if m:
-            return m.group(1)
+    rx = r'(?:https?\:\/\/)?discord(?:\.gg|(?:app)?\.com\/invite)\/(.+)'
+    m = re.match(rx, invite)
+    if m:
+        return m.group(1)
     return invite
 
 
@@ -654,11 +652,10 @@ def resolve_template(code: Union[Template, str]) -> str:
 
     if isinstance(code, Template):
         return code.code
-    else:
-        rx = r'(?:https?\:\/\/)?discord(?:\.new|(?:app)?\.com\/template)\/(.+)'
-        m = re.match(rx, code)
-        if m:
-            return m.group(1)
+    rx = r'(?:https?\:\/\/)?discord(?:\.new|(?:app)?\.com\/template)\/(.+)'
+    m = re.match(rx, code)
+    if m:
+        return m.group(1)
     return code
 
 

@@ -962,12 +962,15 @@ class Guild(Hashable):
                 raise InvalidArgument(f'Expected PermissionOverwrite received {perm.__class__.__name__}')
 
             allow, deny = perm.pair()
-            payload = {'allow': allow.value, 'deny': deny.value, 'id': target.id}
+            payload = {
+                'allow': allow.value,
+                'deny': deny.value,
+                'id': target.id,
+                'type': abc._Overwrites.ROLE
+                if isinstance(target, Role)
+                else abc._Overwrites.MEMBER,
+            }
 
-            if isinstance(target, Role):
-                payload['type'] = abc._Overwrites.ROLE
-            else:
-                payload['type'] = abc._Overwrites.MEMBER
 
             perms.append(payload)
 
@@ -1453,11 +1456,7 @@ class Guild(Hashable):
             fields['afk_timeout'] = afk_timeout
 
         if icon is not MISSING:
-            if icon is None:
-                fields['icon'] = icon
-            else:
-                fields['icon'] = utils._bytes_to_base64_data(icon)
-
+            fields['icon'] = icon if icon is None else utils._bytes_to_base64_data(icon)
         if banner is not MISSING:
             if banner is None:
                 fields['banner'] = banner

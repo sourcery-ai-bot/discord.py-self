@@ -994,11 +994,7 @@ class Client:
             if me is None:
                 continue
 
-            if activity is not None:
-                me.activities = (activity,)
-            else:
-                me.activities = ()
-
+            me.activities = (activity, ) if activity is not None else ()
             me.status = status_enum
 
     # Guild stuff
@@ -1380,13 +1376,10 @@ class Client:
             raise InvalidData('Unknown channel type {type} for channel ID {id}.'.format_map(data))
 
         if ch_type in (ChannelType.group, ChannelType.private):
-            channel = factory(me=self.user, data=data, state=self._connection)
-        else:
-            guild_id = int(data['guild_id'])
-            guild = self.get_guild(guild_id) or Object(id=guild_id)
-            channel = factory(guild=guild, state=self._connection, data=data)
-
-        return channel
+            return factory(me=self.user, data=data, state=self._connection)
+        guild_id = int(data['guild_id'])
+        guild = self.get_guild(guild_id) or Object(id=guild_id)
+        return factory(guild=guild, state=self._connection, data=data)
 
     async def fetch_webhook(self, webhook_id):
         """|coro|

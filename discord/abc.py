@@ -344,12 +344,11 @@ class GuildChannel:
                     'allow': allow.value,
                     'deny': deny.value,
                     'id': target.id,
+                    'type': _Overwrites.ROLE
+                    if isinstance(target, Role)
+                    else _Overwrites.MEMBER,
                 }
 
-                if isinstance(target, Role):
-                    payload['type'] = _Overwrites.ROLE
-                else:
-                    payload['type'] = _Overwrites.MEMBER
 
                 perms.append(payload)
             options['permission_overwrites'] = perms
@@ -771,9 +770,8 @@ class GuildChannel:
                 overwrite = PermissionOverwrite(**permissions)
             except (ValueError, TypeError):
                 raise InvalidArgument('Invalid permissions given to keyword arguments.')
-        else:
-            if len(permissions) > 0:
-                raise InvalidArgument('Cannot mix overwrite and keyword arguments.')
+        elif len(permissions) > 0:
+            raise InvalidArgument('Cannot mix overwrite and keyword arguments.')
 
         # TODO: wait for event
 
@@ -1259,14 +1257,13 @@ class Messageable(Protocol):
         if embed is not None:
             embed = embed.to_dict()
 
-        if allowed_mentions is not None:
-            if state.allowed_mentions is not None:
-                allowed_mentions = state.allowed_mentions.merge(allowed_mentions).to_dict()
-            else:
-                allowed_mentions = allowed_mentions.to_dict()
-        else:
+        if allowed_mentions is None:
             allowed_mentions = state.allowed_mentions and state.allowed_mentions.to_dict()
 
+        elif state.allowed_mentions is not None:
+            allowed_mentions = state.allowed_mentions.merge(allowed_mentions).to_dict()
+        else:
+            allowed_mentions = allowed_mentions.to_dict()
         if mention_author is not None:
             allowed_mentions = allowed_mentions or AllowedMentions().to_dict()
             allowed_mentions['replied_user'] = bool(mention_author)
